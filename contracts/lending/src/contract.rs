@@ -2,8 +2,13 @@
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use cw2::set_contract_version;
 
-use crate::error::ContractError;
+use crate::{
+    error::ContractError,
+    queries,
+    state::{store_state, State},
+};
 
 use services::lending::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
@@ -14,11 +19,15 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    store_state(deps.storage, &State::default())?;
+
     Ok(Response::default())
 }
 
@@ -33,8 +42,10 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    to_binary("")
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::State {} => to_binary(&queries::query_state(deps)?),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
