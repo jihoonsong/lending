@@ -5,3 +5,5 @@ name = "services"
 version = "1.0.0"
 
 [dependencies]
+schemars = "0.8.3"
+serde = { version = "1.0.127", default-features = false, features = ["derive"] }
