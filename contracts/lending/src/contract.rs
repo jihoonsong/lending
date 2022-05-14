@@ -6,6 +6,7 @@ use cw2::set_contract_version;
 
 use crate::{
     error::ContractError,
+    queries,
     state::{store_state, State},
 };
 
@@ -41,8 +42,10 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    to_binary("")
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::State {} => to_binary(&queries::query_state(deps)?),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
