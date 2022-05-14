@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+cosmwasm-std = { version = "0.16.2" }
+cw2 = "0.8.1"
+services = { path = "../../packages/services", default-features = false, version = "1.0.0" }
+thiserror = { version = "1.0.26" }
