@@ -14,6 +14,11 @@ static STATE: Item<State> = Item::new("state");
 static BORROW_REQUEST: Map<&[u8], Vec<BorrowRequest>> = Map::new("borrow_request");
 
 /// ## Description
+/// A map which stores id and borrower address of each borrow request
+/// [`u64`] type as key and [`CanonicalAddr`] type as value
+static BORROW_REQUEST_ID_TO_ADDR: Map<&str, CanonicalAddr> = Map::new("borrow_request_id_to_addr");
+
+/// ## Description
 /// This structure describes state of lending contract
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
@@ -95,4 +100,42 @@ pub fn load_borrow_request(
     BORROW_REQUEST
         .may_load(storage, borrower.as_slice())
         .map(|res| res.unwrap_or_default())
+}
+
+/// ## Description
+/// Saves changes of an object of type [`CanonicalAddr`] in [`BORROW_REQUEST_ID_TO_ADDR`] storage
+/// ## Params
+/// * **storage** is an object of type [`Storage`]
+///
+/// * **id** is [`u64`]
+///
+/// * **borrower** is an object of type [`CanonicalAddr`]
+pub fn store_borrow_request_id_to_addr(
+    storage: &mut dyn Storage,
+    id: u64,
+    borrower: &CanonicalAddr,
+) -> StdResult<()> {
+    BORROW_REQUEST_ID_TO_ADDR.save(storage, &id.to_string(), borrower)
+}
+
+/// ## Description
+/// Returns an object of type [`CanonicalAddr`]
+/// ## Params
+/// * **storage** is an object of type [`Storage`]
+///
+/// * **id** is [`u64`]
+pub fn load_borrow_request_id_to_addr(storage: &dyn Storage, id: u64) -> StdResult<CanonicalAddr> {
+    BORROW_REQUEST_ID_TO_ADDR
+        .may_load(storage, &id.to_string())
+        .map(|res| res.unwrap())
+}
+
+/// ## Description
+/// Remove an object of type [`CanonicalAddr`] in [`BORROW_REQUEST_ID_TO_ADDR`] storage
+/// ## Params
+/// * **storage** is an object of type [`Storage`]
+///
+/// * **id** is [`u64`]
+pub fn remove_borrow_request_id_to_addr(storage: &mut dyn Storage, id: u64) {
+    BORROW_REQUEST_ID_TO_ADDR.remove(storage, &id.to_string())
 }
