@@ -1,3 +1,4 @@
+use astroport::asset::Asset;
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -47,4 +48,20 @@ pub struct StateResponse {
     pub request_count: u64,
     /// The number of responses has been made
     pub response_count: u64,
+}
+
+/// ## Description
+/// This structure describes borrow request response message
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct BorrowRequestResponse {
+    // Id, which is start from 1
+    pub id: u64,
+    // Collateral asset
+    pub collateral: Asset,
+    // Borrowing block period
+    pub period: u64,
+    // An id of borrow response, which responding to this request
+    pub borrowed_from: u64,
+    // A block height that borrowing occured at
+    pub borrowed_at: u64,
 }
