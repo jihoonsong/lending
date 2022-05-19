@@ -1,16 +1,19 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, from_binary, to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult,
 };
 use cw2::set_contract_version;
 
 use crate::{
+    commands,
     error::ContractError,
     queries,
     state::{store_state, State},
+    utils::{to_cw20_token, to_native_token},
 };
 
-use services::lending::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use services::lending::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 /// Contract name that is used for migration.
 const CONTRACT_NAME: &str = "jihoonsong-lending";
@@ -33,12 +36,31 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg,
+    info: MessageInfo,
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    Ok(Response::new())
+    match msg {
+        ExecuteMsg::MakeBorrowRequestCw20Token(cw20_receive_msg) => {
+            match from_binary(&cw20_receive_msg.msg) {
+                Ok(Cw20HookMsg::MakeBorrowRequest { period }) => {
+                    let borrower = deps
+                        .api
+                        .addr_canonicalize(cw20_receive_msg.sender.as_str())?;
+                    let collateral = to_cw20_token(info.sender, cw20_receive_msg.amount)?;
+                    commands::make_borrow_request(deps, &borrower, collateral, period)
+                }
+                Err(_) => Err(ContractError::InvalidCw20HookMsg {}),
+            }
+        }
+        ExecuteMsg::MakeBorrowRequestNativeToken { period } => {
+            validate_funds(&info.funds)?;
+            let borrower = deps.api.addr_canonicalize(info.sender.as_str())?;
+            let collateral = to_native_token(info.funds[0].denom.clone(), info.funds[0].amount)?;
+            commands::make_borrow_request(deps, &borrower, collateral, period)
+        }
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -51,4 +73,16 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
     Ok(Response::default())
+}
+
+fn validate_funds(funds: &Vec<Coin>) -> Result<(), ContractError> {
+    if funds.len() != 1 {
+        return Err(ContractError::InvalidFunds {});
+    }
+
+    if funds[0].amount.is_zero() {
+        return Err(ContractError::InvalidAmount {});
+    }
+
+    Ok(())
 }
