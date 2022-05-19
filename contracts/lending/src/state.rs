@@ -1,11 +1,17 @@
-use cosmwasm_std::{StdResult, Storage};
-use cw_storage_plus::Item;
+use astroport::asset::Asset;
+use cosmwasm_std::{CanonicalAddr, StdResult, Storage};
+use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// ## Description
 /// Stores a struct of type [`State`] at the given key
 static STATE: Item<State> = Item::new("state");
+
+/// ## Description
+/// A map which stores borrow requests from borrowers with
+/// [`CanonicalAddr`] type as key and [`Vec<BorrowRequest>`] type as value
+static BORROW_REQUEST: Map<&[u8], Vec<BorrowRequest>> = Map::new("borrow_request");
 
 /// ## Description
 /// This structure describes state of lending contract
@@ -27,6 +33,22 @@ impl Default for State {
 }
 
 /// ## Description
+/// This structure describes borrow request from borrower
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct BorrowRequest {
+    // Id, which is start from 1
+    pub id: u64,
+    // Collateral asset
+    pub collateral: Asset,
+    // Borrowing block period
+    pub period: u64,
+    // An id of borrow response, which responding to this request
+    pub borrowed_from: u64,
+    // A block height that borrowing occured at
+    pub borrowed_at: u64,
+}
+
+/// ## Description
 /// Saves changes of [`State`] struct in [`STATE`] storage
 /// ## Params
 /// * **storage** is an object of type [`Storage`]
@@ -42,4 +64,35 @@ pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {
 /// * **storage** is an object of type [`Storage`]
 pub fn load_state(storage: &dyn Storage) -> StdResult<State> {
     STATE.load(storage)
+}
+
+/// ## Description
+/// Saves changes of vector of [`BorrowRequest`] struct in [`BORROW_REQUEST`] storage
+/// ## Params
+/// * **storage** is an object of type [`Storage`]
+///
+/// * **borrower** is an object of type [`CanonicalAddr`]
+///
+/// * **borrow_request** is a vector of struct of type [`BorrowRequest`] to be stored
+pub fn store_borrow_request(
+    storage: &mut dyn Storage,
+    borrower: &CanonicalAddr,
+    borrow_request: &Vec<BorrowRequest>,
+) -> StdResult<()> {
+    BORROW_REQUEST.save(storage, borrower.as_slice(), borrow_request)
+}
+
+/// ## Description
+/// Returns a vector of struct of type [`BorrowRequest`]
+/// ## Params
+/// * **storage** is an object of type [`Storage`]
+///
+/// * **borrower** is an object of type [`CanonicalAddr`]
+pub fn load_borrow_request(
+    storage: &dyn Storage,
+    borrower: &CanonicalAddr,
+) -> StdResult<Vec<BorrowRequest>> {
+    BORROW_REQUEST
+        .may_load(storage, borrower.as_slice())
+        .map(|res| res.unwrap_or_default())
 }
