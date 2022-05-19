@@ -8,4 +8,10 @@ pub enum ContractError {
 
     #[error("{0}")]
     OverflowError(#[from] OverflowError),
+
+    #[error("Invalid amount")]
+    InvalidAmount {},
+
+    #[error("Invalid period")]
+    InvalidPeriod {},
 }
