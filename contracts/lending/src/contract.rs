@@ -67,6 +67,12 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::State {} => to_binary(&queries::query_state(deps)?),
+        QueryMsg::BorrowRequestById { id } => {
+            to_binary(&queries::query_borrow_request_by_id(deps, id)?)
+        }
+        QueryMsg::BorrowRequestByAddr { borrower } => {
+            to_binary(&queries::query_borrow_requests_by_addr(deps, borrower)?)
+        }
     }
 }
 

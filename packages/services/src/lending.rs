@@ -35,6 +35,8 @@ pub enum Cw20HookMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     State {},
+    BorrowRequestById { id: u64 },
+    BorrowRequestByAddr { borrower: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
